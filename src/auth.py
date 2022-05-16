@@ -13,7 +13,7 @@ def sign_request(
     path: str,
     *,
     api_key_secret: str = os.getenv("API_SECRET"),
-    body=""
+    body: str = "",
 ):
     """Signs the request payload using the api key secret
     api - the api key secret
