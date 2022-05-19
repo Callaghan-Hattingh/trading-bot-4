@@ -1,6 +1,6 @@
 import requests
 import time
-from src.auth import sign_request
+from src.auth import sign_request, get_headers
 from dotenv import load_dotenv
 import os
 import json
@@ -16,12 +16,8 @@ def get_all_open_orders():
 
     url = f"{os.getenv('ROOT_URL')}{path}"
     payload = {}
-    headers = {
-        "X-VALR-API-KEY": os.getenv("API_KEY"),
-        "X-VALR-SIGNATURE": f"{signature}",
-        "X-VALR-TIMESTAMP": f"{timestamp}",
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(timestamp, signature)
+
     response = requests.request("GET", url, headers=headers, data=payload)
     return response
 
@@ -40,21 +36,19 @@ def post_limit_order(
     path = "/v1/orders/limit"
 
     url = f"{os.getenv('ROOT_URL')}{path}"
-    payload = json.dumps({
-        "side": side,
-        "quantity": amount,
-        "price": price,
-        "pair": pair,
-        "postOnly": post_type,
-        'customerOrderId': customer_id,
-    })
+    payload = json.dumps(
+        {
+            "side": side,
+            "quantity": amount,
+            "price": price,
+            "pair": pair,
+            "postOnly": post_type,
+            "customerOrderId": customer_id,
+        }
+    )
     signature = sign_request(timestamp, verb, path, body=payload)
-    headers = {
-        "X-VALR-API-KEY": os.getenv("API_KEY"),
-        "X-VALR-SIGNATURE": f"{signature}",
-        "X-VALR-TIMESTAMP": f"{timestamp}",
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(timestamp, signature)
+
     response = requests.request("POST", url, headers=headers, data=payload)
     return response
 
@@ -74,17 +68,12 @@ def del_order(*, pair: str = "BTCZAR", customer_id: str = None, order_id: str = 
         raise ValueError("Must provide either customer_id or order_id")
 
     signature = sign_request(timestamp, verb, path, body=payload)
-    headers = {
-        "X-VALR-API-KEY": os.getenv("API_KEY"),
-        "X-VALR-SIGNATURE": f"{signature}",
-        "X-VALR-TIMESTAMP": f"{timestamp}",
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(timestamp, signature)
     response = requests.request("DELETE", url, headers=headers, data=payload)
     return response
 
 
-def get_trade_hist(*, pair: str = "BTCZAR",skip: int = 0, limit: int = 1):
+def get_trade_hist(*, pair: str = "BTCZAR", skip: int = 0, limit: int = 1):
     timestamp = int(time.time() * 1000)
     verb = "GET"
     path = f"/v1/marketdata/{pair}/tradehistory?skip={skip}&limit={limit}"
@@ -92,36 +81,41 @@ def get_trade_hist(*, pair: str = "BTCZAR",skip: int = 0, limit: int = 1):
     url = f"{os.getenv('ROOT_URL')}{path}"
     payload = {}
     signature = sign_request(timestamp, verb, path)
-    headers = {
-        "X-VALR-API-KEY": os.getenv("API_KEY"),
-        "X-VALR-SIGNATURE": f"{signature}",
-        "X-VALR-TIMESTAMP": f"{timestamp}",
-        "Content-Type": "application/json",
-    }
+    headers = get_headers(timestamp, signature)
+
     response = requests.request("GET", url, headers=headers, data=payload)
     return response
 
 
-def get_order_history_summary(*, pair: str = "BTCZAR", customer_id: str = None, order_id: str = None):
+def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
     if customer_id is not None:
-        path = f"/v1/orders/history/{customer_id}?pair={pair}"
+        path = f"/v1/orders/history/summary/{customer_id}"
     elif order_id is not None:
-        path = f"/v1/orders/history/{order_id}?pair={pair}"
+        path = f"/v1/orders/history/{order_id}"
     else:
         raise ValueError("Must provide either customer_id or order_id")
+    timestamp = int(time.time() * 1000)
+    verb = "GET"
+    signature = sign_request(timestamp, verb, path)
+    url = f"{os.getenv('ROOT_URL')}{path}"
+    payload = {}
+    headers = get_headers(timestamp, signature)
 
-
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response
 
 
 if __name__ == "__main__":
-    w = (get_trade_hist())
+    w = get_trade_hist()
     print(w.text)
+
+    print(int(time.time() * 1000))
 
     y = get_all_open_orders()
     y = y.json()
     for i in y:
         print(i)
-    x = post_limit_order("BUY", 0.00100000, 10001, 'BTCZAR-10001')
+    # x = post_limit_order("BUY", 0.00100000, 10001, "BTCZAR-10001")
     # q = del_order(customer_id='BTCZAR-10001')
     # print(q)
     # print(x.text)

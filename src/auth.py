@@ -30,6 +30,15 @@ def sign_request(
     return signature
 
 
+def get_headers(timestamp: int, signature: str):
+    return {
+        "X-VALR-API-KEY": os.getenv("API_KEY"),
+        "X-VALR-SIGNATURE": f"{signature}",
+        "X-VALR-TIMESTAMP": f"{timestamp}",
+        "Content-Type": "application/json",
+    }
+
+
 if __name__ == "__main__":
     s = sign_request(
         int(time.time() * 1000),
