@@ -1,11 +1,8 @@
 import requests
 import time
 from src.auth import sign_request, get_headers
-from dotenv import load_dotenv
 import os
 import json
-
-load_dotenv()
 
 
 def get_all_open_orders():
@@ -19,7 +16,7 @@ def get_all_open_orders():
     headers = get_headers(timestamp, signature)
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def post_limit_order(
@@ -87,11 +84,14 @@ def get_trade_hist(*, pair: str = "BTCZAR", skip: int = 0, limit: int = 1):
     return response
 
 
-def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
+def get_order_status(
+    *, pair: str = "BTCZAR", customer_id: str = None, order_id: str = None
+):
+    # call only directly after placing order
     if customer_id is not None:
-        path = f"/v1/orders/history/summary/{customer_id}"
+        path = f"/v1/orders/{pair}/customerorderid/{customer_id}"
     elif order_id is not None:
-        path = f"/v1/orders/history/{order_id}"
+        path = f"/v1/orders/{pair}/orderid/{order_id}"
     else:
         raise ValueError("Must provide either customer_id or order_id")
     timestamp = int(time.time() * 1000)
@@ -105,18 +105,64 @@ def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
     return response
 
 
+def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
+    # get the order history summary of the last successfully placed order
+    if customer_id is not None:
+        path = f"/v1/orders/history/summary/customerorderid/{customer_id}"
+    elif order_id is not None:
+        path = f"/v1/orders/history/summary/orderid/{order_id}"
+    else:
+        raise ValueError("Must provide either customer_id or order_id")
+    timestamp = int(time.time() * 1000)
+    verb = "GET"
+    signature = sign_request(timestamp, verb, path)
+    url = f"{os.getenv('ROOT_URL')}{path}"
+    payload = {}
+    headers = get_headers(timestamp, signature)
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response
+
+
+def get_order_history_detail(*, customer_id: str = None, order_id: str = None):
+    # get the order history detail of the last successfully placed order
+    if customer_id is not None:
+        path = f"/v1/orders/history/detail/customerorderid/{customer_id}"
+    elif order_id is not None:
+        path = f"/v1/orders/history/detail/orderid/{order_id}"
+    else:
+        raise ValueError("Must provide either customer_id or order_id")
+    timestamp = int(time.time() * 1000)
+    verb = "GET"
+    signature = sign_request(timestamp, verb, path)
+    url = f"{os.getenv('ROOT_URL')}{path}"
+    payload = {}
+    headers = get_headers(timestamp, signature)
+
+    response = requests.request("GET", url, headers=headers, data=payload)
+    return response
+
+
+
 if __name__ == "__main__":
-    w = get_trade_hist()
-    print(w.text)
-
-    print(int(time.time() * 1000))
-
+    # w = get_trade_hist()
+    # print(w.text)
     y = get_all_open_orders()
-    y = y.json()
     for i in y:
         print(i)
+        print(i["customerOrderId"])
+        r = get_order_status(customer_id=i["customerOrderId"])
+        print(r.text)
+        e = get_order_history_summary(customer_id=i["customerOrderId"])
+        print(e.text)
+        t = get_order_history_detail(customer_id=i["customerOrderId"])
+        t = t.json()
+        for u in t:
+            print(1)
+            print(u)
+    # q = del_order(customer_id='BTCZAR-10001-v0')
     # x = post_limit_order("BUY", 0.00100000, 10001, "BTCZAR-10001")
-    # q = del_order(customer_id='BTCZAR-10001')
+    # q = del_order(customer_id='BTCZAR-10001-v0')
     # print(q)
     # print(x.text)
     # print(x.status_code)
