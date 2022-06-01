@@ -47,7 +47,7 @@ def post_limit_order(
     headers = get_headers(timestamp, signature)
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def del_order(*, pair: str = "BTCZAR", customer_id: str = None, order_id: str = None):
@@ -67,7 +67,7 @@ def del_order(*, pair: str = "BTCZAR", customer_id: str = None, order_id: str = 
     signature = sign_request(timestamp, verb, path, body=payload)
     headers = get_headers(timestamp, signature)
     response = requests.request("DELETE", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def get_trade_hist(*, pair: str = "BTCZAR", skip: int = 0, limit: int = 1):
@@ -81,7 +81,7 @@ def get_trade_hist(*, pair: str = "BTCZAR", skip: int = 0, limit: int = 1):
     headers = get_headers(timestamp, signature)
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def get_order_status(
@@ -102,7 +102,7 @@ def get_order_status(
     headers = get_headers(timestamp, signature)
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
@@ -121,7 +121,7 @@ def get_order_history_summary(*, customer_id: str = None, order_id: str = None):
     headers = get_headers(timestamp, signature)
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response
+    return response.json()
 
 
 def get_order_history_detail(*, customer_id: str = None, order_id: str = None):
@@ -140,8 +140,7 @@ def get_order_history_detail(*, customer_id: str = None, order_id: str = None):
     headers = get_headers(timestamp, signature)
 
     response = requests.request("GET", url, headers=headers, data=payload)
-    return response
-
+    return response.json()
 
 
 if __name__ == "__main__":
